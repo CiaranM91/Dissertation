@@ -48,8 +48,8 @@ def canMakeMove(board):
     # There are eight possible ways for the gems to be one move
     # away from forming a triple, hence oneOffPattern has 8 patterns.
 
-    for x in range(COLUMNS):
-        for y in range(ROWS):
+    for x in range(ROWS):
+        for y in range(COLUMNS):
             for pat in oneOffPatterns:
                 # check each possible pattern of "match in next move" to
                 # see if a possible move can be made.
@@ -65,8 +65,8 @@ def canMakeMove(board):
 
 def getNewGems(board):
     # count the number of empty spaces in each column on the board
-    for x in range(COLUMNS):
-        for y in range(ROWS-1, -1, -1): # start from bottom, going up
+    for x in range(ROWS):
+        for y in range(COLUMNS-1, -1, -1): # start from bottom, going up
             if board[x][y] == EMPTYSPACE:
                 possibleGems = list(range(1,NUMBEROFGEMS))
                 for offsetX, offsetY in ((0, -1), (1, 0), (0, 1), (-1, 0)):
@@ -83,6 +83,15 @@ def getNewGems(board):
     return board
 
 def pullDownAllGems(board):
+    print('BEFORE:')
+    print(board[0])
+    print(board[1])
+    print(board[2])
+    print(board[3])
+    print(board[4])
+    print(board[5])
+    print(board[6])
+    print(board[7])
     # pulls down gems on the board to the bottom to fill in any gaps
     for x in range(ROWS):
         gemsInColumn = []
@@ -90,6 +99,15 @@ def pullDownAllGems(board):
             if board[x][y] != EMPTYSPACE:
                 gemsInColumn.append(board[x][y])
         board[x] = ([EMPTYSPACE] * (ROWS - len(gemsInColumn))) + gemsInColumn
+    print('AFTER:')
+    print(board[0])
+    print(board[1])
+    print(board[2])
+    print(board[3])
+    print(board[4])
+    print(board[5])
+    print(board[6])
+    print(board[7])    
     return board
 
 
@@ -113,15 +131,15 @@ def buildBoard():
     #Setting all elements to 1 initially
     board = [[1]*COLUMNS for i in range(ROWS)]
     #Creating a random board with zero matches to begin
-    for r in range(ROWS):
-        for c in range(COLUMNS):
-            board[r][c] = randint(1, NUMBEROFGEMS)
-            while (r>0 and board[r][c] == board[r - 1][c]) or (c > 0 and board[r][c] == board[r][c - 1]):
-                board[r][c] = randint(1, NUMBEROFGEMS) 
+    for x in range(ROWS):
+        for y in range(COLUMNS):
+            board[x][y] = randint(1, NUMBEROFGEMS)
+            while (x>0 and board[x][y] == board[x - 1][y]) or (x > 0 and board[x][y] == board[x][y - 1]):
+                board[x][y] = randint(1, NUMBEROFGEMS) 
     return board  
 
 def getGemAt(board, x, y):
-    if x < 0 or y < 0 or x >= COLUMNS or y >= ROWS:
+    if x < 0 or y < 0 or x >= ROWS or y >= COLUMNS:
         return None
     else:
         print('Gem at ',x,',',y,'is',board[x][y])
@@ -131,8 +149,8 @@ def findMatchingGems(board):
     gemsToRemove = [] # a list of lists of gems in matching triplets that should be removed
     
     # loop through each space, checking for 3 adjacent identical gems
-    for x in range(COLUMNS):
-        for y in range(ROWS):
+    for x in range(ROWS):
+        for y in range(COLUMNS):
             # look for horizontal matches
             if getGemAt(board, x, y) == getGemAt(board, x + 1, y) == getGemAt(board, x + 2, y) and getGemAt(board, x, y) != EMPTYSPACE:
                 targetGem = board[x][y]
@@ -163,6 +181,15 @@ def findMatchingGems(board):
 board = buildBoard() 
 @app.route('/')
 def index():
+    print('BEFORE:')
+    print(board[0])
+    print(board[1])
+    print(board[2])
+    print(board[3])
+    print(board[4])
+    print(board[5])
+    print(board[6])
+    print(board[7])
     data = json.dumps(board)
     score = 0
     return render_template('index.html', data=data, score=score)
@@ -183,8 +210,8 @@ def game():
     i = request.args.get('i', type=int)
     j = request.args.get('j', type=int)
     
-    clickX = j
-    clickY = i
+    clickX = i
+    clickY = j
     selectedgem = int(getGemAt(board, clickX, clickY))
     
     if selectedgem == None and not firstGemX:
@@ -246,6 +273,7 @@ def game():
                         for gem in gemSet:
                             board[gem[0]][gem[1]] = EMPTYSPACE
                     score += scoreAdd
+
                     print('Before pulling down gems', board)
                     #pulling down all gems
                     board = pullDownAllGems(board)
@@ -253,13 +281,15 @@ def game():
                     
                     board = getNewGems(board)
                     print('With new gems', board)
-                    firstGemX = None
-                    firstGemY = None
-                    selectedgem = None
-                    if canMakeMove(board) == False:
-                        board = buildBoard()
+                    matchedGems = findMatchingGems(board)
 
-                    return json.dumps(board)+'X'+str(None)+'X'+str(None)+'X'+str(score)
+                firstGemX = None
+                firstGemY = None
+                selectedgem = None
+                if canMakeMove(board) == False:
+                    board = buildBoard()
+
+                return json.dumps(board)+'X'+str(None)+'X'+str(None)+'X'+str(score)
 
                
             
