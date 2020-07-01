@@ -190,9 +190,13 @@ def index():
     print(board[5])
     print(board[6])
     print(board[7])
-    data = json.dumps(board)
+    firstGemX = None
+    firstGemY = None
     score = 0
-    return render_template('index.html', data=data, score=score)
+    state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+    data = json.dumps(state)
+    
+    return render_template('index.html', data=data)
 
 
 
@@ -206,7 +210,11 @@ def game():
     global clickY 
     if canMakeMove(board) == False:
         board = buildBoard()
-        return json.dumps(board)
+        firstGemX = None
+        firstGemY = None
+        score = 0
+        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+        return json.dumps(state)
     i = request.args.get('i', type=int)
     j = request.args.get('j', type=int)
     
@@ -227,7 +235,8 @@ def game():
         firstGemX = clickX
         firstGemY = clickY
         selectedgem = None
-        final_value = json.dumps(board) + 'X'+str(firstGemY)+'X'+str(firstGemX)+'X'+str(score)
+        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+        final_value = json.dumps(state)
         
         return final_value
 
@@ -240,7 +249,8 @@ def game():
             #if the selections are not next to each other return the board and unselect
             firstGemX, firstGemY = None, None
             selectedgem = None
-            return json.dumps(board)+'X'+str(None)+'X'+str(None)+'X'+str(score)
+            state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+            return json.dumps(state)
 
         elif checkGemSelection(firstGemX, firstGemY, clickX, clickY) != None:
             print('Option 5')
@@ -261,7 +271,8 @@ def game():
                 #if there are no matches swap back
                 board[firstGemX][firstGemY] = firstGem
                 board[clickX][clickY] = secondGem
-                return json.dumps(board)+'X'+str(None)+'X'+str(None)+'X'+str(score)
+                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+                return json.dumps(state)
             else:
                 print('Option 7')
                 print(matchedGems)
@@ -289,7 +300,8 @@ def game():
                 if canMakeMove(board) == False:
                     board = buildBoard()
 
-                return json.dumps(board)+'X'+str(None)+'X'+str(None)+'X'+str(score)
+                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+                return json.dumps(state)
 
                
             
