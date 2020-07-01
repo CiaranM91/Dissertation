@@ -16,6 +16,7 @@ clickX = None
 clickY = None
 selectedgem = None   
 score = 0  
+highscore = 0
 
 def canMakeMove(board):
     # Return True if the board is in a state where a matching
@@ -190,8 +191,10 @@ def game():
         board = buildBoard()
         firstGemX = None
         firstGemY = None
+        if score > highscore:
+            highscore = score
         score = 0
-        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
         return json.dumps(state)
 
     i = request.args.get('i', type=int)
@@ -215,7 +218,7 @@ def game():
         firstGemX = clickX
         firstGemY = clickY
         selectedgem = None
-        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore' : highscore}
     
         return json.dumps(state)
 
@@ -228,7 +231,7 @@ def game():
             #if the selections are not next to each other return the board and unselect
             firstGemX, firstGemY = None, None
             selectedgem = None
-            state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+            state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
             return json.dumps(state)
 
         elif checkGemSelection(firstGemX, firstGemY, clickX, clickY) != None:
@@ -251,7 +254,7 @@ def game():
                 board[firstGemX][firstGemY] = firstGem
                 board[clickX][clickY] = secondGem
                 firstGemX, firstGemY = None, None
-                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
                 return json.dumps(state)
 
             else:  
@@ -277,9 +280,11 @@ def game():
                 selectedgem = None
                 if canMakeMove(board) == False:
                     board = buildBoard()
+                    if score > highscore:
+                        highscore = score
                     score = 0
 
-                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score}
+                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
                 return json.dumps(state)
 
                   
