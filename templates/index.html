@@ -10,12 +10,20 @@
     <script>
         var imageArray;
         //loading in JSON of nested list from Python code
-        var json = '{{ data }}';
-        var board = JSON.parse(json);
-        var selectx = null;
-        var selecty = null;
-        var score = '{{ score }}';
-        console.log(score)
+        var json = '{{ data | tojson | safe}}';
+        console.log(json)
+
+        var state = JSON.parse(json)
+
+        console.log(state)
+
+        var board = state.board
+        var selectx = state.x;
+        var selecty = state.y;
+        var score = state.score;
+
+
+
 
         //function to check mouse location and convert to integer within 2d array
         //will return -1 if outside the grid
@@ -93,11 +101,12 @@
         }
 
         function draw() {
-            console.log()
+            textSize(32);
+            text(score, 10, 400 );
             var x = 325;
             var y = 10;
             //iterating through 2d array of numbers to form game grid
-            for (var i = 0; i <board.length; i++) {
+            for (var i = 0; i < board.length; i++) {
                 for (var j = 0; j < board[i].length; j++) {
                     var imageNum = board[i][j] - 1
                     image(imageArray[imageNum], x, y, 30, 30)
@@ -107,7 +116,20 @@
                 y = 10;
             }
             if (selectx != null && selecty != null) {
-                square((45 * selectx), (45 * selecty), 55)
+                x = 7 - selectx
+                y = selecty
+                line((45 * x)+5, (45 * y)+7, ((45*x)+45), (45*y)+7 )
+                stroke('rgb(0,255,0)');
+                strokeWeight(4);
+                line((45 * x)+5, (45 * y)+44, ((45*x)+45), (45*y)+44)
+                stroke('rgb(0,255,0)');
+                strokeWeight(4);
+                line((45 * x)+5, (45 * y)+7, ((45*x)+5), (45*y)+44 )
+                stroke('rgb(0,255,0)');
+                strokeWeight(4);
+                line(((45*x)+45), (45 * y)+7, ((45*x)+45), (45*y)+44 )
+                stroke('rgb(0,255,0)');
+                strokeWeight(4);
             }
 
 
@@ -147,7 +169,7 @@
                 console.log(xPos)
                 var i = checkClickX(xPos);
                 var j = checkClickY(yPos);
-                console.log('x = ',i,' y = ',j)
+                console.log('x = ', i, ' y = ', j)
 
                 var xhttp = new XMLHttpRequest();
 
@@ -156,27 +178,17 @@
                     if (this.readyState == 4 && this.status == 200) {
                         clear();
                         var string = this.responseText;
-                        var splitArray = string.split('X');
-                        //console.log(splitArray)
-                        board = JSON.parse(splitArray[0])
+                        console.log(string)
+                        json = JSON.parse(string)
 
-                        if (splitArray[1] == 'None') {
-                            selectx = null
-                        } else {
-                            selectx = splitArray[1];
-                        }
-                        if (splitArray[2] == 'None') {
-                            selecty = null
-                        } else {
-                            selecty = splitArray[2];
-
-                        }
-
-                        score = splitArray[3];
+                        board = json.board
+                        selectx = json.x;
+                        selecty = json.y;
+                        score = json.score;
                         console.log(selectx)
                         console.log(selecty)
                         console.log(score)
-
+                        
                     }
                 };
                 xhttp.open("GET", "/make_selection?i=" + i + "&j=" + j, true);
@@ -194,8 +206,8 @@
 
     </script>
 
-    
 
+<p id='score'></p>
 </body>
 
 </html>
