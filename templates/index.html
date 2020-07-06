@@ -8,22 +8,18 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script> $SCRIPT_ROOT = '{{ request.script_root|tojson|safe }}'</script>
     <script>
+
         var imageArray;
         //loading in JSON of nested list from Python code
         var json = '{{ data | tojson | safe}}';
-        
 
         var state = JSON.parse(json)
-
-        
 
         var board = state.board
         var selectx = state.x;
         var selecty = state.y;
         var score = state.score;
-
-
-
+        var highscore = state.highscore;
 
         //function to check mouse location and convert to integer within 2d array
         //will return -1 if outside the grid
@@ -79,6 +75,7 @@
 </head>
 
 <body>
+    
     <p id="result"></p>
     <script type='application/javascript'>
 
@@ -101,10 +98,7 @@
         }
 
         function draw() {
-            textSize(32);
-            text('Highscore '+highscore, 10, 450 );
-            textSize(32);
-            text(score, 10, 400 );
+            
             var x = 325;
             var y = 10;
             //iterating through 2d array of numbers to form game grid
@@ -120,20 +114,23 @@
             if (selectx != null && selecty != null) {
                 x = 7 - selectx
                 y = selecty
-                line((45 * x)+5, (45 * y)+7, ((45*x)+45), (45*y)+7 )
+                line((45 * x) + 5, (45 * y) + 7, ((45 * x) + 45), (45 * y) + 7)
                 stroke('rgb(0,255,0)');
                 strokeWeight(4);
-                line((45 * x)+5, (45 * y)+44, ((45*x)+45), (45*y)+44)
+                line((45 * x) + 5, (45 * y) + 44, ((45 * x) + 45), (45 * y) + 44)
                 stroke('rgb(0,255,0)');
                 strokeWeight(4);
-                line((45 * x)+5, (45 * y)+7, ((45*x)+5), (45*y)+44 )
+                line((45 * x) + 5, (45 * y) + 7, ((45 * x) + 5), (45 * y) + 44)
                 stroke('rgb(0,255,0)');
                 strokeWeight(4);
-                line(((45*x)+45), (45 * y)+7, ((45*x)+45), (45*y)+44 )
+                line(((45 * x) + 45), (45 * y) + 7, ((45 * x) + 45), (45 * y) + 44)
                 stroke('rgb(0,255,0)');
                 strokeWeight(4);
             }
-
+            textSize(32);
+            text('Highscore ' + highscore, 10, 450);
+            textSize(32);
+            text(score, 10, 400);
 
 
 
@@ -168,10 +165,9 @@
 
                 var xPos = e.pageX
                 var yPos = e.pageY
-                console.log(xPos)
+
                 var i = checkClickX(xPos);
                 var j = checkClickY(yPos);
-                console.log('x = ', i, ' y = ', j)
 
                 var xhttp = new XMLHttpRequest();
 
@@ -179,8 +175,9 @@
 
                     if (this.readyState == 4 && this.status == 200) {
                         clear();
+
                         var string = this.responseText;
-                        console.log(string)
+                        
                         json = JSON.parse(string)
 
                         board = json.board
@@ -188,25 +185,12 @@
                         selecty = json.y;
                         score = json.score;
                         highscore = json.highscore
-                        console.log(selectx)
-                        console.log(selecty)
-                        console.log(score)
-                        
                     }
                 };
                 xhttp.open("GET", "/make_selection?i=" + i + "&j=" + j, true);
                 xhttp.send();
-
-
             });
         });
-
-
-
-
-
-
-
     </script>
 
 

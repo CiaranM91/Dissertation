@@ -93,10 +93,8 @@ def pullDownAllGems(board):
         board[x] = ([EMPTYSPACE] * (ROWS - len(gemsInColumn))) + gemsInColumn   
     return board
 
-
-
 def checkGemSelection(firstGemX, firstGemY, currentGemX, currentGemY):
-    
+
     if firstGemX == currentGemX + 1 and firstGemY == currentGemY:
         return firstGemX, firstGemY, currentGemX, currentGemY
     elif firstGemX == currentGemX - 1 and firstGemY == currentGemY:
@@ -109,7 +107,6 @@ def checkGemSelection(firstGemX, firstGemY, currentGemX, currentGemY):
         # These gems are not adjacent and can't be swapped.
         return None
 
-
 def buildBoard():
     #Setting all elements to 1 initially
     board = [[1]*COLUMNS for i in range(ROWS)]
@@ -117,7 +114,7 @@ def buildBoard():
     for x in range(ROWS):
         for y in range(COLUMNS):
             board[x][y] = randint(1, NUMBEROFGEMS)
-            while (x>0 and board[x][y] == board[x - 1][y]) or (x > 0 and board[x][y] == board[x][y - 1]):
+            while (x>=0 and board[x][y] == board[x - 1][y]) or (x >= 0 and board[x][y] == board[x][y - 1]):
                 board[x][y] = randint(1, NUMBEROFGEMS) 
     return board  
 
@@ -155,27 +152,23 @@ def findMatchingGems(board):
                 gemsToRemove.append(removeSet)
     return gemsToRemove
 
-
 #premade 5 match board for testing
 #board = [[1,2,3,4,5,6,7,1],[3,3,4,3,3,6,7,1],[1,2,2,3,4,5,6,7],[1,2,3,4,5,6,7,1],[7,6,5,4,3,2,1,1],[1,2,3,1,2,3,4,5],[7,6,1,2,5,4,1,2],[1,2,3,4,5,6,7,1]]
 board = buildBoard()
 @app.route('/')
 def index():
 
-    
-    
     state = {
         'board' : board,
         'y' : firstGemY, 
         'x' : firstGemX, 
-        'score' : score
+        'score' : score,
+        'highscore' : highscore
         }
 
     data = json.dumps(state)
     loaded_data = json.loads(data)
     return render_template('index.html', data=loaded_data)
-
-
 
 @app.route('/make_selection', methods=['GET', 'POST'])
 def game():
@@ -186,6 +179,7 @@ def game():
     global firstGemY
     global clickX
     global clickY 
+    global highscore
 
     if canMakeMove(board) == False:
         board = buildBoard()
@@ -193,8 +187,15 @@ def game():
         firstGemY = None
         if score > highscore:
             highscore = score
+        
         score = 0
-        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
+        state = {
+            'board':board, 
+            'y':firstGemY, 
+            'x':firstGemX, 
+            'score':score, 
+            'highscore': highscore
+            }
         return json.dumps(state)
 
     i = request.args.get('i', type=int)
@@ -212,18 +213,23 @@ def game():
 
     elif selectedgem != None and firstGemX == None:
         
-
         #if selected gem is valid and no gem currently selected
         #create new first selection and return both it and the board
         firstGemX = clickX
         firstGemY = clickY
         selectedgem = None
-        state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore' : highscore}
+
+        state = {
+            'board':board, 
+            'y':firstGemY, 
+            'x':firstGemX, 
+            'score':score, 
+            'highscore' : highscore
+            }
     
         return json.dumps(state)
 
     elif selectedgem != None and firstGemX != None:
-        
 
         #if selected gem is valid and first selection made go into game mechanics
         if checkGemSelection(firstGemX, firstGemY, clickX, clickY) == None:
@@ -231,7 +237,13 @@ def game():
             #if the selections are not next to each other return the board and unselect
             firstGemX, firstGemY = None, None
             selectedgem = None
-            state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
+            state = {
+                'board':board, 
+                'y':firstGemY, 
+                'x':firstGemX, 
+                'score':score, 
+                'highscore': highscore
+                }
             return json.dumps(state)
 
         elif checkGemSelection(firstGemX, firstGemY, clickX, clickY) != None:
@@ -254,7 +266,15 @@ def game():
                 board[firstGemX][firstGemY] = firstGem
                 board[clickX][clickY] = secondGem
                 firstGemX, firstGemY = None, None
-                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
+
+                state = {
+                    'board':board, 
+                    'y':firstGemY, 
+                    'x':firstGemX, 
+                    'score':score, 
+                    'highscore': highscore
+                    }
+
                 return json.dumps(state)
 
             else:  
@@ -267,7 +287,6 @@ def game():
                         for gem in gemSet:
                             board[gem[0]][gem[1]] = EMPTYSPACE
                     score += scoreAdd
-
                     
                     #pulling down all gems
                     matchedGems = findMatchingGems(board)
@@ -284,10 +303,15 @@ def game():
                         highscore = score
                     score = 0
 
-                state = {'board':board, 'y':firstGemY, 'x':firstGemX, 'score':score, 'highscore': highscore}
+                state = {
+                    'board':board, 
+                    'y':firstGemY, 
+                    'x':firstGemX, 
+                    'score':score, 
+                    'highscore': highscore
+                    }
                 return json.dumps(state)
-
-                  
+        
 if __name__ == "__main__":
     app.run(debug = True)       
    
