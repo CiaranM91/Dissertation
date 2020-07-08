@@ -3,7 +3,7 @@ import json
 import copy 
 import random
 from random import randint
-import os.path
+import os
 app = Flask(__name__)
 
 COLUMNS = 8
@@ -152,6 +152,69 @@ def findMatchingGems(board):
                 gemsToRemove.append(removeSet)
     return gemsToRemove
 
+
+def write_json(data, filename): 
+    with open(filename,'w') as f: 
+        json.dump(data, f, indent=4) 
+
+
+def save_outputs(output, file):
+    if not os.path.exists(file):
+        with open(file, 'w'): pass
+        outputs = {'outputs': []}
+        write_json(outputs, file)
+        with open(file) as json_file: 
+            data = json.load(json_file) 
+      
+            temp = data['outputs'] 
+    
+            output_data = [output]
+  
+            temp.append(output_data) 
+      
+        write_json(data, file)  
+
+    else :
+        with open(file) as json_file: 
+            data = json.load(json_file) 
+      
+            temp = data['outputs'] 
+    
+            output_data = [output]
+  
+            temp.append(output_data) 
+      
+        write_json(data, file)      
+
+def save_inputs(x, y, file):
+    if not os.path.exists(file):
+        with open(file, 'w'): pass
+        inputs = {'inputs': []}
+        write_json(inputs, file)
+        with open(file) as json_file: 
+            data = json.load(json_file) 
+      
+            temp = data['inputs'] 
+    
+            input_data = [x, y]
+  
+            temp.append(input_data) 
+      
+        write_json(data, file)
+        
+
+    else :
+        with open(file) as json_file: 
+            data = json.load(json_file) 
+      
+            temp = data['inputs'] 
+    
+            input_data = [x, y]
+  
+            temp.append(input_data) 
+      
+        write_json(data, file)            
+
 #premade 5 match board for testing
 #board = [[1,2,3,4,5,6,7,1],[3,3,4,3,3,6,7,1],[1,2,2,3,4,5,6,7],[1,2,3,4,5,6,7,1],[7,6,5,4,3,2,1,1],[1,2,3,1,2,3,4,5],[7,6,1,2,5,4,1,2],[1,2,3,4,5,6,7,1]]
 board = buildBoard()
@@ -198,18 +261,26 @@ def game():
             }
         return json.dumps(state)
 
-    i = request.args.get('i', type=int)
-    j = request.args.get('j', type=int)
-    
-    clickX = i
-    clickY = j
+    clickX = request.args.get('i', type=int)
+    clickY = request.args.get('j', type=int)
 
-    selectedgem = int(getGemAt(board, clickX, clickY))
+    save_inputs(clickX, clickY, 'inputs.json')
+
+    selectedgem = getGemAt(board, clickX, clickY)
     
     if selectedgem == None and not firstGemX:
         
         #if selected gem is not on board and no gem previously selected return the current board
-        return json.dumps(board)
+        state = {
+            'board':board, 
+            'y':firstGemY, 
+            'x':firstGemX, 
+            'score':score, 
+            'highscore' : highscore
+            }
+        save_outputs(state, 'outputs.json')
+
+        return json.dumps(state)
 
     elif selectedgem != None and firstGemX == None:
         
@@ -226,7 +297,9 @@ def game():
             'score':score, 
             'highscore' : highscore
             }
-    
+
+        save_outputs(state, 'outputs.json')
+
         return json.dumps(state)
 
     elif selectedgem != None and firstGemX != None:
@@ -237,6 +310,7 @@ def game():
             #if the selections are not next to each other return the board and unselect
             firstGemX, firstGemY = None, None
             selectedgem = None
+
             state = {
                 'board':board, 
                 'y':firstGemY, 
@@ -244,6 +318,9 @@ def game():
                 'score':score, 
                 'highscore': highscore
                 }
+
+            save_outputs(state, 'outputs.json')
+
             return json.dumps(state)
 
         elif checkGemSelection(firstGemX, firstGemY, clickX, clickY) != None:
@@ -274,7 +351,7 @@ def game():
                     'score':score, 
                     'highscore': highscore
                     }
-
+                save_outputs(state, 'outputs.json')
                 return json.dumps(state)
 
             else:  
@@ -288,10 +365,14 @@ def game():
                             board[gem[0]][gem[1]] = EMPTYSPACE
                     score += scoreAdd
                     
-                    #pulling down all gems
+                    #check for new matches
                     matchedGems = findMatchingGems(board)
+
+                    #pulling down all gems
                     board = pullDownAllGems(board)
+                    #fill new gems
                     board = getNewGems(board)
+                    #again check for matches
                     matchedGems = findMatchingGems(board)
 
                 firstGemX = None
@@ -310,6 +391,7 @@ def game():
                     'score':score, 
                     'highscore': highscore
                     }
+                save_outputs(state, 'outputs.json')
                 return json.dumps(state)
         
 if __name__ == "__main__":
