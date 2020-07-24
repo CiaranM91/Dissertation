@@ -1,11 +1,8 @@
-from flask import Flask, request, jsonify, render_template, url_for
 import json
 import copy
 import random
 from random import randint
-import os
 
-app = Flask(__name__)
 
 COLUMNS = 8
 ROWS = 8
@@ -20,93 +17,67 @@ score = 0
 highscore = 0
 random.seed(5)
 
-
 def searchMoves(board):
     possible_moves = []
+    # Return True if the board is in a state where a matching
+    # move can be made on it. Otherwise return False.
+
+    # The patterns in oneOffPatterns represent gems that are configured
+    # in a way where it only takes one move to make a triplet.
+    oneOffPatterns = (
+        ((0, 1), (1, 0), (2, 0), (0, 0), (0, 1)),
+        ((0, 1), (1, 1), (2, 0), (2, 0), (2, 1)),
+        ((0, 0), (1, 1), (2, 0), (1, 0), (1, 1)),
+        ((0, 1), (1, 0), (2, 1), (1, 0), (1, 1)),
+        ((0, 0), (1, 0), (2, 1), (2, 0), (2, 1)),
+        ((0, 0), (1, 1), (2, 1), (0, 0), (0, 1)),
+        ((0, 0), (0, 2), (0, 3), (0, 0), (0, 1)),
+        ((0, 0), (0, 1), (0, 3), (0, 2), (0, 3)),
+    )
+
+    # The x and y variables iterate over each space on the board.
+    # If we use + to represent the currently iterated space on the
+    # board, then this pattern: ((0,1), (1,0), (2,0))refers to identical
+    # gems being set up like this:
+    #
+    #     ABxC
+    #     xB
+    #     xC
+    #
+    # That is, gem A is offset from the + by (0,1), gem B is offset
+    # by (1,0), and gem C is offset by (2,0). In this case, gem A can
+    # be swapped to the left to form a vertical three-in-a-row triplet.
+    #
+    # There are eight possible ways for the gems to be one move
+    # away from forming a triple, hence oneOffPattern has 8 patterns.
+
     for x in range(ROWS):
         for y in range(COLUMNS):
+            for pat in oneOffPatterns:
+                # check each possible pattern of "match in next move" to
+                # see if a possible move can be made.
+                if (
+                    getGemAt(board, x + pat[0][0], y + pat[0][1])
+                    == getGemAt(board, x + pat[1][0], y + pat[1][1])
+                    == getGemAt(board, x + pat[2][0], y + pat[2][1])
+                    != None
+                ) :
+                    gem1 = [x+pat[3][0], y+pat[3][1]]
+                    gem2 = [x+pat[4][0], y+pat[4][1]]
+                    move = [tuple(gem1), tuple(gem2)]
+                    possible_moves.append(move)
 
-            if (
-                getGemAt(board, x, y)
-                == getGemAt(board, x + 2, y)
-                == getGemAt(board, x + 3, y)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x + 1, y]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
+                elif (
+                    getGemAt(board, x + pat[0][1], y + pat[0][0])
+                    == getGemAt(board, x + pat[1][1], y + pat[1][0])
+                    == getGemAt(board, x + pat[2][1], y + pat[2][0])
+                    != None
+                ):
+                    gem1 = [x+pat[3][1], y+pat[3][0]]
+                    gem2 = [x+pat[4][1], y+pat[4][0]]
+                    move = [tuple(gem1), tuple(gem2)]
+                    possible_moves.append(move)
 
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x, y + 2)
-                == getGemAt(board, x, y + 3)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x, y + 1]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x + 1, y)
-                == getGemAt(board, x + 1, y + 2)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x + 1, y]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x - 1, y - 1)
-                == getGemAt(board, x - 1, y + 1)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x - 1, y]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x - 1, y - 1)
-                == getGemAt(board, x + 1, y - 1)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x, y - 1]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x - 1, y + 1)
-                == getGemAt(board, x + 1, y + 1)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x, y + 1]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x - 2, y)
-                == getGemAt(board, x - 3, y)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x - 1, y]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
-            elif (
-                getGemAt(board, x, y)
-                == getGemAt(board, x, y - 2)
-                == getGemAt(board, x, y - 3)
-                != None
-            ):
-                gem = [x, y]
-                gem2 = [x, y - 1]
-                possible_moves.append(gem)
-                possible_moves.append(gem2)
     return possible_moves
 
 
@@ -210,6 +181,7 @@ def checkGemSelection(firstGemX, firstGemY, currentGemX, currentGemY):
 
 
 def buildBoard():
+    
     # Setting all elements to 1 initially
     board = [[1] * COLUMNS for i in range(ROWS)]
     # Creating a random board with zero matches to begin
@@ -271,300 +243,107 @@ def findMatchingGems(board):
     return gemsToRemove
 
 
-def write_json(data, filename):
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-def save_outputs(output, file):
-    if not os.path.exists(file):
-        with open(file, "w"):
-            pass
-        outputs = {"outputs": []}
-        write_json(outputs, file)
-        with open(file) as json_file:
-            data = json.load(json_file)
-
-            temp = data["outputs"]
-
-            output_data = [output]
-
-            temp.append(output_data)
-
-        write_json(data, file)
-
-    else:
-        with open(file) as json_file:
-            data = json.load(json_file)
-
-            temp = data["outputs"]
-
-            output_data = [output]
-
-            temp.append(output_data)
-
-        write_json(data, file)
-
-
-def save_inputs(x, y, file):
-    if not os.path.exists(file):
-        with open(file, "w"):
-            pass
-        inputs = {"inputs": []}
-        write_json(inputs, file)
-        with open(file) as json_file:
-            data = json.load(json_file)
-
-            temp = data["inputs"]
-
-            input_data = [x, y]
-
-            temp.append(input_data)
-
-        write_json(data, file)
-
-    else:
-        with open(file) as json_file:
-            data = json.load(json_file)
-
-            temp = data["inputs"]
-
-            input_data = [x, y]
-
-            temp.append(input_data)
-
-        write_json(data, file)
-
-
-def save_moves(pat, file):
-    if not os.path.exists(file):
-        with open(file, "w"):
-            pass
-        inputs = {"moves": []}
-        write_json(inputs, file)
-
-        with open(file) as json_file:
-            data = json.load(json_file)
-
-            temp = data["moves"]
-
-            input_data = pat
-
-            temp.append(input_data)
-
-        write_json(data, file)
-
-    else:
-        with open(file) as json_file:
-            data = json.load(json_file)
-
-            temp = data["moves"]
-
-            input_data = pat
-
-            temp.append(input_data)
-
-        write_json(data, file)
-
-
-# premade 5 match board for testing
-# board = [[1,2,3,4,5,6,7,1],[3,3,4,3,3,6,7,1],[1,2,2,3,4,5,6,7],[1,2,3,4,5,6,7,1],[7,6,5,4,3,2,1,1],[1,2,3,1,2,3,4,5],[7,6,1,2,5,4,1,2],[1,2,3,4,5,6,7,1]]
 board = buildBoard()
 
 
-@app.route("/")
-def index():
+def game(board, gems):
+    if canMakeMove == False:
+            board = buildBoard()
+            score = 0
 
-    state = {
-        "board": board,
-        "y": firstGemY,
-        "x": firstGemX,
-        "score": score,
-        "highscore": highscore,
-    }
-    moves = searchMoves(board)
-    save_moves(moves, "moves.json")
-    data = json.dumps(state)
-    loaded_data = json.loads(data)
-    return render_template("index.html", data=loaded_data)
+    gem1 = gems[0]
+    gem2 = gems[1]
+    score = 0
 
+    firstGem = int(getGemAt(board, gem1[0], gem1[1]))
+    secondGem = int(getGemAt(board, gem2[0], gem2[1]))
+    # swapping gems
 
-@app.route("/make_selection", methods=["GET", "POST"])
-def game():
+    board[gem1[0]][gem1[1]] = secondGem
+    board[gem2[0]][gem2[1]] = firstGem
 
-    global score
-    global board
-    global firstGemX
-    global firstGemY
-    global clickX
-    global clickY
-    global highscore
+    matchedGems = findMatchingGems(board)
+    
+    while matchedGems != []:
+        scoreAdd = 0
+        # Remove matched gems, then pull down the board.
+        for gemSet in matchedGems:
+            scoreAdd += 10 + (len(gemSet) - 3) * 10
+            for gem in gemSet:
+                board[gem[0]][gem[1]] = EMPTYSPACE
+        score += scoreAdd
+        # check for new matches
+        matchedGems = findMatchingGems(board)
 
-    if canMakeMove(board) == False:
-        board = buildBoard()
-        firstGemX = None
-        firstGemY = None
-        if score > highscore:
-            highscore = score
+        # pulling down all gems
+        board = pullDownAllGems(board)
+        # fill new gems
+        board = getNewGems(board)
+        # again check for matches
+        matchedGems = findMatchingGems(board)
+        
+        if canMakeMove == False:
+            board = buildBoard()
+            score = 0
 
-        score = 0
-        state = {
-            "board": board,
-            "y": firstGemY,
-            "x": firstGemX,
-            "score": score,
-            "highscore": highscore,
-        }
-        save_outputs(state, "outputs.json")
-        return json.dumps(state)
-
-    clickX = request.args.get("i", type=int)
-    clickY = request.args.get("j", type=int)
-
-    save_inputs(clickX, clickY, "inputs.json")
-
-    selectedgem = getGemAt(board, clickX, clickY)
-    if selectedgem == None and firstGemX != None:
-        firstGemX = None
-        firstGemY = None
-        state = {
-            "board": board,
-            "y": firstGemY,
-            "x": firstGemX,
-            "score": score,
-            "highscore": highscore,
-        }
-        save_outputs(state, "outputs.json")
-
-        return json.dumps(state)
-
-    elif selectedgem == None and not firstGemX:
-
-        # if selected gem is not on board and no gem previously selected return the current board
-        state = {
-            "board": board,
-            "y": firstGemY,
-            "x": firstGemX,
-            "score": score,
-            "highscore": highscore,
-        }
-        save_outputs(state, "outputs.json")
-
-        return json.dumps(state)
-
-    elif selectedgem != None and firstGemX == None:
-
-        # if selected gem is valid and no gem currently selected
-        # create new first selection and return both it and the board
-        firstGemX = clickX
-        firstGemY = clickY
-        selectedgem = None
-
-        state = {
-            "board": board,
-            "y": firstGemY,
-            "x": firstGemX,
-            "score": score,
-            "highscore": highscore,
-        }
-
-        save_outputs(state, "outputs.json")
-
-        return json.dumps(state)
-
-    elif selectedgem != None and firstGemX != None:
-
-        # if selected gem is valid and first selection made go into game mechanics
-        if checkGemSelection(firstGemX, firstGemY, clickX, clickY) == None:
-
-            # if the selections are not next to each other return the board and unselect
-            firstGemX, firstGemY = None, None
-            selectedgem = None
-
-            state = {
-                "board": board,
-                "y": firstGemY,
-                "x": firstGemX,
-                "score": score,
-                "highscore": highscore,
-            }
-
-            save_outputs(state, "outputs.json")
-
-            return json.dumps(state)
-
-        elif checkGemSelection(firstGemX, firstGemY, clickX, clickY) != None:
-
-            # if valid selection follow game engine
-            # assigning gem valuies for swap
-
-            firstGem = int(getGemAt(board, firstGemX, firstGemY))
-            secondGem = int(getGemAt(board, clickX, clickY))
-            # swapping gems
-
-            board[firstGemX][firstGemY] = secondGem
-            board[clickX][clickY] = firstGem
-
-            matchedGems = findMatchingGems(board)
-
-            if matchedGems == []:
-
-                # if there are no matches swap back
-                board[firstGemX][firstGemY] = firstGem
-                board[clickX][clickY] = secondGem
-                firstGemX, firstGemY = None, None
-
-                state = {
-                    "board": board,
-                    "y": firstGemY,
-                    "x": firstGemX,
-                    "score": score,
-                    "highscore": highscore,
-                }
-                save_outputs(state, "outputs.json")
-                return json.dumps(state)
-
-            else:
-
-                while matchedGems != []:
-                    scoreAdd = 0
-                    # Remove matched gems, then pull down the board.
-                    for gemSet in matchedGems:
-                        scoreAdd += 10 + (len(gemSet) - 3) * 10
-                        for gem in gemSet:
-                            board[gem[0]][gem[1]] = EMPTYSPACE
-                    score += scoreAdd
-
-                    # check for new matches
-                    matchedGems = findMatchingGems(board)
-
-                    # pulling down all gems
-                    board = pullDownAllGems(board)
-                    # fill new gems
-                    board = getNewGems(board)
-                    # again check for matches
-                    matchedGems = findMatchingGems(board)
-
-                firstGemX = None
-                firstGemY = None
-                selectedgem = None
-                if canMakeMove(board) == False:
-                    board = buildBoard()
-                    if score > highscore:
-                        highscore = score
-                    score = 0
-
-                state = {
-                    "board": board,
-                    "y": firstGemY,
-                    "x": firstGemX,
-                    "score": score,
-                    "highscore": highscore,
-                }
-                save_outputs(state, "outputs.json")
-                return json.dumps(state)
+        state = [board, score]
+        return state
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+def treeSearch(board, numIterations, depthOfSearch):
+    randomGen = random.Random()
+    possibleMoves = searchMoves(board)
+    averageCount = []
 
+    for _ in range(len(possibleMoves)):
+        averageCount.append([0, 0])
+
+    for _ in range(numIterations):
+        moveindex = randomGen.randint(0, len(possibleMoves)-1)
+        boardCopy = copy.deepcopy(board)
+
+        scorecount = 0
+        averageCount[moveindex][0] += 1
+        for _ in range(depthOfSearch):
+
+            state = takeRandomMove(boardCopy)
+            boardCopy = state[0]
+            scorecount += state[1]
+            averageCount[moveindex][1] += scorecount
+
+    scoredmoves = []
+
+    for x in range(len(possibleMoves)):
+        score = averageCount[x][1]
+        if(averageCount[x][0] > 0):
+            score = score/(0.0+averageCount[moveindex][0])
+            scoredmoves.append((possibleMoves[x], score))
+
+        # Randomise the possible moves list
+    randomGen.shuffle(scoredmoves)
+      # Sort the possible moves list
+    scoredmoves.sort(key=lambda x: x[1])
+      # Return the move at the top or bottom, whichever has the highest score associated with it
+    bestMove = scoredmoves[-1]
+    print(scoredmoves)
+    print(averageCount)
+    return bestMove
+
+
+def takeRandomMove(board):
+    randomGen = random.Random()
+    newBoard = copy.deepcopy(board)
+    possibleMoves = searchMoves(board)
+    print(possibleMoves)
+    while possibleMoves == []:
+        newBoard = buildBoard()
+        possibleMoves = searchMoves(newBoard)
+    #print('moves :',possibleMoves)
+    move = randomGen.choice(possibleMoves)
+    
+    #print('selected',move)
+    state = game(newBoard, move)
+    
+    return state
+
+print(treeSearch(board, 50, 5))
